@@ -2728,12 +2728,74 @@ n.cores <- detectCores()
 my.cluster <- makeCluster(n.cores, type = "PSOCK")
 registerDoParallel(cl = my.cluster)
 
-#comb <- function(x, ...) {
-#  lapply(seq_along(x),
-#         function(i) c(x[[i]], lapply(list(...), function(y) y[[i]])))
-#}
+comb <- function(past_results, fb) {
+  
+  results <- rep(NULL, 29)
+  
+  # Used to Check if There Parameters were returned or not
+  aje12.bool <- FALSE
+  je12.bool <- FALSE
+  
+  # Check if "aje12" is a returned parameter in the bootResults
+  if("aje12" %in% colnames(fb)) aje12.bool <- TRUE
+  
+  # Check if "je12" is a returned parameter in the bootResults
+  if("je12" %in% colnames(fb)) je12.bool <- TRUE
+  
+  results$ade1<-rbind(past_results$ade1,fb$ade1)
+  results$ade2<-rbind(past_results$ade2,fb$ade2)
+  
+  results$ate1<-rbind(past_results$ate1,fb$ate1)
+  results$ate2<-rbind(past_results$ate2,fb$ate2)
+  
+  results$aie1<-rbind(past_results$aie1,fb$aie1)
+  results$aie2<-rbind(past_results$aie2,fb$aie2)
+  results$aie12<-rbind(past_results$aie12,fb$aie12)
+  
+  results$aje1<-rbind(past_results$aje1,fb$aje1)
+  results$aje2<-rbind(past_results$aje2,fb$aje2)
+  
+  if(aje12.bool) results$aje12<-rbind(past_results$aje12,fb$aje12)
+  
+  results$coef.f1=rbind(past_results$coef.f1, fb$coef.f1)
+  
+  if(length(fb$coef.fm1)>1)
+    for (j in 2:length(fb$coef.fm1))
+      results$coef.fm1[[j]]=rbind(past_results$coef.fm1[[j]], fb$coef.fm1[[j]])
+  
+  if(length(fb$coef.fm2)>1)
+    for (j in 2:length(fb$coef.fm2))
+      results$coef.fm2[[j]]=rbind(past_results$coef.fm2[[j]], fb$coef.fm2[[j]])
+  
+  if(plot.it){
+    results$ie1<-abind(past_results$ie1,fb$ie1,along=1)
+    results$ie2<-abind(past_results$ie2,fb$ie2,along=1)
+    results$ie12<-abind(past_results$ie12,fb$ie12,along=1)
+    results$ie1_2<-abind(past_results$ie1_2,fb$ie1_2,along=1)
+    results$ie2_1<-rbind(past_results$ie2_1,fb$ie2_1)
+    results$ie1_1<-rbind(past_results$ie1_1,fb$ie1_1)
+    results$ie2_2<-abind(past_results$ie2_2,fb$ie2_2,along=1)
+    results$ie1_3<-rbind(past_results$ie1_3,fb$ie1_3)
+    results$ie2_3<-rbind(past_results$ie2_3,fb$ie2_3)
+    results$de1<-rbind(past_results$de1,fb$de1)
+    results$de2<-rbind(past_results$de2,fb$de2)
+    results$te1<-rbind(past_results$te1,fb$te1)
+    results$te2<-rbind(past_results$te2,fb$te2)
+    results$je1<-abind(past_results$je1,fb$je1,along=1)
+    results$je2<-abind(past_results$je2,fb$je2,along=1)
+    if(je12.bool) results$je12<-abind(past_results$je12,fb$je12,along=1)
+  }
+  
+  return(results)
+}
 
-bootResults <- foreach(l = 1:boot, .combine = 'rbind', .inorder=FALSE) %dopar% {
+bootResults <- foreach(l = 1:boot, .combine = 'comb', .inorder=FALSE, 
+                                                      .init= list(ade1=NULL, ade2=NULL, ate1=NULL, ate2=NULL, aie1=NULL,
+                                                                  aie2=NULL, aie12=NULL, aje1=NULL, aje2=NULL, aje12=NULL,
+                                                                  coef.f1=NULL, coef.fm1=NULL, coef.fm2=NULL, ie1=NULL, ie2=NULL,
+                                                                  ie12=NULL, ie1_2=NULL, ie2_1=NULL, ie1_1=NULL, ie2_2=NULL,
+                                                                  ie1_3=NULL, ie2_3=NULL, de1=NULL, de2=NULL, te1=NULL,
+                                                                  te2=NULL, je1=NULL, je2=NULL, je12=NULL)) %dopar% {
   #a. create bootsample
   
   func<-function(vec,weight)
@@ -2784,132 +2846,49 @@ bootResults <- foreach(l = 1:boot, .combine = 'rbind', .inorder=FALSE) %dopar% {
   if(echo)
     print(l)
   
-  full.boot
+  return(full.boot)
 }
 
 stopCluster(cl = my.cluster)
 
-#str(bootResults["result.1","de1"])
-#str(bootResults["result.1","de1"][[1]])
-#str(bootResults[1,"de1"])
-#str(bootResults[1,"de1"][[1]])
-#str(bootResults[,"de1"][[1]])
-#str(bootResults["result.1","de1"][[1]][1])
-#print("BRTEAKAKSDKJS")
+ade1.boot<-bootResults$ade1
+ade2.boot<-bootResults$ade2
 
-#test <- NULL
+ate1.boot<-bootResults$ate1
+ate2.boot<-bootResults$ate2
 
-#test <- rbind(test, bootResults["result.2","de1"][[1]])
+aie1.boot<-bootResults$aie1
+aie2.boot<-bootResults$aie2
+aie12.boot<-bootResults$aie12
 
-#str(test)
-#test <- unlist(unname(bootResults[,"de1"]))
+aje1.boot<-bootResults$aje1
+aje2.boot<-bootResults$aje2
+aje12.boot<-bootResults$aje12
 
-#attributes(test)<- attributes(bootResults["result.1","de1"][1])
-
-#str(test)
-
-#list1 <- bootResults["result.1","de1"]
-#str(list1)
-#list2 <- bootResults["result.2","de1"]
-#list1[1] <- c(list1[1],unlist(list2))
-
-#str(list1)
-#str(list2)
-#test_out<-unlist(unname(bootResults[,"de1"]))
-#str(test_out)
-
-ade1.boot<-NULL
-ade2.boot<-NULL
-
-ate1.boot<-NULL
-ate2.boot<-NULL
-
-aie1.boot<-NULL
-aie2.boot<-NULL
-aie12.boot<-NULL
-
-aje1.boot<-NULL
-aje2.boot<-NULL
-aje12.boot<-NULL
+coef.f1=rbind(coef.f1,bootResults$coef.f1)
+coef.fm1=rbind(coef.fm1,bootResults$coef.fm1)
+coef.fm2=rbind(coef.fm2,bootResults$coef.fm2)
 
 if(plot.it){
-  ie1.boot<-NULL
-  ie2.boot<-NULL
-  ie12.boot<-NULL
-  
-  ie1_1.boot<-NULL
-  ie1_2.boot<-NULL
-  ie1_3.boot<-NULL
-  
-  ie2_1.boot<-NULL
-  ie2_2.boot<-NULL
-  ie2_3.boot<-NULL
-  
-  de1.boot<-NULL
-  de2.boot<-NULL
-  
-  je1.boot<-NULL
-  je2.boot<-NULL
-  je12.boot<-NULL
-  
-  te1.boot<-NULL
-  te2.boot<-NULL
+  ie1.boot<-bootResults$ie1
+  ie2.boot<-bootResults$ie2
+  ie12.boot<-bootResults$ie12
+  ie1_2.boot<-bootResults$ie1_2
+  ie2_1.boot<-bootResults$ie2_1
+  ie1_1.boot<-bootResults$ie1_1
+  ie2_2.boot<-bootResults$ie2_2
+  ie1_3.boot<-bootResults$ie1_3
+  ie2_3.boot<-bootResults$ie2_3
+  de1.boot<-bootResults$de1
+  de2.boot<-bootResults$de2
+  te1.boot<-bootResults$te1
+  te2.boot<-bootResults$te2
+  je1.boot<-bootResults$je1
+  je2.boot<-bootResults$je2
+  je12.boot<-bootResults$je12
 }
 
-# Used to CHeck if There Parameters were returned or not
-aje12.bool <- FALSE
-je12.bool <- FALSE
 
-# Check if "aje12" is a returned parameter in the bootResults
-if("aje12" %in% colnames(bootResults)) aje12.bool <- TRUE
-
-# Check if "je12" is a returned parameter in the bootResults
-if("je12" %in% colnames(bootResults)) je12.bool <- TRUE
-
-
-for(i in 1:boot){
-  
-  ade1.boot<-rbind(ade1.boot,bootResults[i,"ade1"][[1]])
-  ade2.boot<-rbind(ade2.boot,bootResults[i,"ade2"][[1]])
-  
-  ate1.boot<-rbind(ate1.boot,bootResults[i,"ate1"][[1]])
-  ate2.boot<-rbind(ate2.boot,bootResults[i,"ate2"][[1]])
-  
-  aie1.boot<-rbind(aie1.boot,bootResults[i,"aie1"][[1]])
-  aie2.boot<-rbind(aie2.boot,bootResults[i,"aie2"][[1]])
-  aie12.boot<-rbind(aie12.boot,bootResults[i,"aie12"][[1]])
-  
-  aje1.boot<-rbind(aje1.boot,bootResults[i,"aje1"][[1]])
-  aje2.boot<-rbind(aje2.boot,bootResults[i,"aje2"][[1]])
-  if(aje12.bool) aje12.boot<-rbind(aje12.boot,bootResults[i,"aje12"][[1]])
-  
-  coef.f1=rbind(coef.f1, bootResults[i,"coef.f1"][[1]])
-  if(length(coef.fm1)>1)
-    for (j in 2:length(coef.fm1))
-      coef.fm1[[j]]=rbind(coef.fm1[[j]], bootResults[i,"coef.fm1"][[1]][[j]])
-  if(length(coef.fm2)>1)
-    for (j in 2:length(coef.fm2))
-      coef.fm2[[j]]=rbind(coef.fm2[[j]], bootResults[i,"coef.fm2"][[1]][[j]])
-  
-  if(plot.it){
-    ie1.boot<-abind(ie1.boot,bootResults[i,"ie1"][[1]],along=1)
-    ie2.boot<-abind(ie2.boot,bootResults[i,"ie2"][[1]],along=1)
-    ie12.boot<-abind(ie12.boot,bootResults[i,"ie12"][[1]],along=1)
-    ie1_2.boot<-abind(ie1_2.boot,bootResults[i,"ie1_2"][[1]],along=1)
-    ie2_1.boot<-rbind(ie2_1.boot,bootResults[i,"ie2_1"][[1]])
-    ie1_1.boot<-rbind(ie1_1.boot,bootResults[i,"ie1_1"][[1]])
-    ie2_2.boot<-abind(ie2_2.boot,bootResults[i,"ie2_2"][[1]],along=1)
-    ie1_3.boot<-rbind(ie1_3.boot,bootResults[i,"ie1_3"][[1]])
-    ie2_3.boot<-rbind(ie2_3.boot,bootResults[i,"ie2_3"][[1]])
-    de1.boot<-rbind(de1.boot,bootResults[i,"de1"][[1]])
-    de2.boot<-rbind(de2.boot,bootResults[i,"de2"][[1]])
-    te1.boot<-rbind(te1.boot,bootResults[i,"te1"][[1]])
-    te2.boot<-rbind(te2.boot,bootResults[i,"te2"][[1]])
-    je1.boot<-abind(je1.boot,bootResults[i,"je1"][[1]],along=1)
-    je2.boot<-abind(je2.boot,bootResults[i,"je2"][[1]],along=1)
-    if(je12.bool) je12.boot<-abind(je12.boot,bootResults[i,"je12"][[1]],along=1)
-  }
-}
 
 ###################################################################################
 if(plot.it)
@@ -3565,7 +3544,7 @@ lower<-summary.obj$re1[[1]][7,]}
 else
 {lower<-summary.obj$re1[[1]][5,]
 upper<-summary.obj$re1[[1]][4,]}
-str(re)
+#str(re)
 d<-order(re)
 name1<-c("DE",colnames(object$full$aie1),colnames(object$full$aje1))
 bp<-barplot2(re[d],horiz=TRUE,xlab=paste("Relative Effects of Level 1 Mediation Effects with Exposure Variable", rownames(object$full$aie1),sep=" "),
